@@ -58,15 +58,13 @@ class AlpineWorkloadTests(unittest.TestCase):
         self.assertIn("alpine-workload:amd64", text)
         self.assertIn("alpine-workload:arm64", text)
 
-    def test_readme_uses_commit_pinned_github_kit_references(self):
+    def test_readme_uses_default_branch_github_kit_references(self):
         text = Path("README.md").read_text(encoding="utf-8")
-        source = r"git\+https://github\.com/Lichthagel/docker-sandbox-kits\.git#ref=([0-9a-f]{40})&dir="
-        workload = re.search(source + "alpine", text)
-        mixin = re.search(source + "mise", text)
+        source = r"git\+https://github\.com/Lichthagel/docker-sandbox-kits\.git#dir="
 
-        self.assertIsNotNone(workload)
-        self.assertIsNotNone(mixin)
-        self.assertEqual(workload.group(1), mixin.group(1))
+        self.assertRegex(text, source + "alpine")
+        self.assertRegex(text, source + "mise")
+        self.assertNotIn("#ref=", text)
 
 
 if __name__ == "__main__":

@@ -6,15 +6,15 @@ separate `mise` tool mixin.
 ## Run the Alpine workload with mise
 
 From the repository root, create a sandbox using the workload and mixin from
-this GitHub repository. Replace `<commit>` with the 40-character commit SHA
-you want to use (the same commit is used for both kits):
+the default branch of this GitHub repository:
 
 ```sh
-sbx run "git+https://github.com/Lichthagel/docker-sandbox-kits.git#ref=635d7b7524e5562396182b195a1d492c21148da8&dir=alpine" \
-  --kit "git+https://github.com/Lichthagel/docker-sandbox-kits.git#ref=635d7b7524e5562396182b195a1d492c21148da8&dir=mise"
+sbx run "git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=alpine" \
+  --kit "git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=mise"
 ```
 
-The source references are pinned to commit `635d7b7524e5562396182b195a1d492c21148da8`. For local development, the equivalent command is `sbx run ./alpine --kit ./mise`.
+The references follow the repository's default branch. For local development,
+the equivalent command is `sbx run ./alpine --kit ./mise`.
 
 The workload starts Bash as the non-root `agent` user (UID/GID 1000) in
 `/home/agent/workspace`. Inside the sandbox, verify mise with:
