@@ -9,12 +9,13 @@ From the repository root, create a sandbox using the workload and mixin from
 the default branch of this GitHub repository:
 
 ```sh
-sbx run "git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=alpine" \
-  --kit "git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=mise"
+sbx settings set kit.allowedSources '["docker.io/","github.com/Lichthagel/"]'
+sbx run 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=alpine' --kit 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=mise'
 ```
 
-The references follow the repository's default branch. For local development,
-the equivalent command is `sbx run ./alpine --kit ./mise`.
+The allowed-sources setting permits kits from Docker Hub and this GitHub
+account. The references follow the repository's default branch. For local
+development, the equivalent command is `sbx run ./alpine --kit ./mise`.
 
 The workload starts Bash as the non-root `agent` user (UID/GID 1000) in
 `/home/agent/workspace`. Inside the sandbox, verify mise with:

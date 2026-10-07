@@ -65,6 +65,14 @@ class AlpineWorkloadTests(unittest.TestCase):
         self.assertRegex(text, source + "alpine")
         self.assertRegex(text, source + "mise")
         self.assertNotIn("#ref=", text)
+        self.assertIn(
+            "sbx settings set kit.allowedSources ",
+            text,
+        )
+        self.assertIn(
+            "sbx run 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=alpine' --kit 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=mise'",
+            text,
+        )
 
 
 if __name__ == "__main__":
