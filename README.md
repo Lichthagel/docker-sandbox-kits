@@ -1,7 +1,7 @@
 # Docker Sandbox kits
 
-This project contains a minimal Alpine Linux Docker Sandbox v3 workload and a
-separate `mise` tool mixin.
+This project contains an Alpine Linux Docker Sandbox v3 workload with Docker
+Engine support, and a separate `mise` tool mixin.
 
 ## Run the Alpine workload with mise
 
@@ -18,7 +18,21 @@ account. The references follow the repository's default branch. For local
 development, the equivalent command is `sbx run ./alpine --kit ./mise`.
 
 The workload starts Bash as the non-root `agent` user (UID/GID 1000) in
-`/home/agent/workspace`. Inside the sandbox, verify mise with:
+`/home/agent/workspace`. It includes the Docker CLI, Buildx, and Compose, and
+the `shell-docker` integration starts a private Docker Engine inside the
+sandbox. It does not connect to your host's Docker daemon. Verify Docker and
+Compose from inside the sandbox with:
+
+```sh
+docker info
+docker compose version
+```
+
+Use `docker build`, `docker run`, and `docker compose` as usual; containers
+remain inside the sandbox's private engine. Registry access is subject to the
+sandbox's network policy.
+
+Verify mise with:
 
 ```sh
 mise --version
@@ -54,9 +68,10 @@ docker buildx build ./alpine -f ./alpine/alpine.yaml \
 ```
 
 The `alpine/` workload contains the sandbox essentials (`bash`, `git`, `curl`,
-and CA certificates), `libstdc++` for Node.js musl binaries, and global mise
-settings to select those binaries instead of compiling from source. mise is
-still installed separately by `mise/`.
+and CA certificates), Docker Engine, CLI, Buildx and Compose, `libstdc++` for
+Node.js musl binaries, and global mise settings to select those binaries
+instead of compiling from source. mise is still installed separately by
+`mise/`.
 
 ## Build the mise mixin
 
