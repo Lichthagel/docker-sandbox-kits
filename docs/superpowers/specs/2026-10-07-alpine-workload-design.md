@@ -13,10 +13,14 @@ published Alpine workload.
 - A v3 descriptor declaring `kind: workload` and the config-less
   `com.docker.sandbox/sbx@1` capability.
 - An Alpine 3.24.2-based Dockerfile, pinning the latest stable Alpine release
-  when this design was updated, containing only sandbox prerequisites:
-  `bash`, `git`, `curl`, and CA certificates. It creates a non-root `agent`
-  user with UID/GID 1000 and home `/home/agent`, provides a workspace at
-  `/home/agent/workspace`, and launches Bash.
+  when this design was updated, containing the sandbox essentials `bash`,
+  `git`, `curl`, and CA certificates, plus `libstdc++` for Node.js musl
+  binaries. It creates a non-root `agent` user with UID/GID 1000 and home
+  `/home/agent`, provides a workspace at `/home/agent/workspace`, and launches
+  Bash.
+- A global mise config that disables source compilation for Node and uses the
+  community-maintained Node.js unofficial musl builds. No Node.js runtime is
+  installed in the workload image; Node remains installed on demand by mise.
 - README instructions to run `sbx run ./alpine --kit ./mise` and verify the
   composition with `mise --version`.
 
@@ -31,8 +35,9 @@ no default command arguments. The workload descriptor must not request
 network access, credentials, or unrelated capabilities.
 
 The existing `mise/` mixin remains a separate kit and remains the only kit
-installing mise. The Alpine workload contains no `mise` binary, language
-runtimes, or other development tools.
+installing mise. The Alpine workload contains no mise binary or preinstalled
+language runtimes. Its global mise configuration selects prebuilt Node.js musl
+archives and includes their required `libstdc++` runtime dependency.
 
 ## Documentation and validation
 
@@ -46,5 +51,6 @@ Buildx.
 Validate both descriptors and Dockerfiles with Docker Buildx. Run the
 composed Alpine workload and verify that it runs as the non-root `agent` user,
 starts Bash as its launch command, resolves `mise` on PATH, and successfully
-prints the mise version. The workload's `sbx@1` declaration must be consistent
-with the image configuration it describes.
+prints the mise version. Verify `mise use -g node` installs a prebuilt musl
+archive and `mise exec -- node --version` succeeds. The workload's `sbx@1`
+declaration must be consistent with the image configuration it describes.

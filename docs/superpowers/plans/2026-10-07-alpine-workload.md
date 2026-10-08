@@ -15,10 +15,14 @@
 - The workload is based on Alpine 3.24.2, pinned to the latest stable release at the time of the version update.
 - The workload kit directory is `alpine/`, with `alpine.yaml` and `alpine.dockerfile`.
 - The v3 workload descriptor declares `com.docker.sandbox/sbx@1` with no config.
-- Install only `bash`, `git`, `curl`, and CA certificates as sandbox prerequisites.
+- Install `bash`, `git`, `curl`, CA certificates, and `libstdc++` for Node.js
+  musl binaries.
+- Ship a global mise config disabling Node source compilation and selecting the
+  community-maintained unofficial Node.js musl builds.
 - Create non-root `agent` with UID/GID 1000, home `/home/agent`, and workspace `/home/agent/workspace`.
 - Set image `USER agent`, `WORKDIR /home/agent/workspace`, Bash entrypoint, and no default command arguments.
-- The workload does not include mise, language runtimes, or other development tools; mise remains in its separate mixin.
+- The workload does not include the mise binary or preinstalled language
+  runtimes; mise remains in its separate mixin.
 - Do not request network access, credentials, or unrelated capabilities.
 
 ## Review Focus
@@ -37,6 +41,7 @@
 - Create: `tests/test_alpine_workload.py`
 - Create: `alpine/alpine.yaml`
 - Create: `alpine/alpine.dockerfile`
+- Create: `alpine/mise-config.toml`
 - Modify: `README.md`
 
 **Interfaces:**
@@ -124,4 +129,21 @@ Expected: effective identity is `agent` UID/GID 1000; passwd home is `/home/agen
 
 - [x] **Step 8: Review the kit and documentation against the spec**
 
-Confirm `sbx@1` matches the built image, the workload contains only the four listed packages and no `mise`, the run command composes `./alpine` with `./mise`, and the README's build commands use valid descriptor/context paths for both platforms. **Verified:** independent review found no Critical or Important issues; it recommended stricter static assertions and plan tracking. Assertions were strengthened and execution checkboxes updated; final tests passed.
+Confirm `sbx@1` matches the built image, the workload contains the documented
+runtime packages but no `mise` binary, the run command composes `./alpine` with
+`./mise`, and the README's build commands use valid descriptor/context paths
+for both platforms. **Verified before the Node musl follow-up:** independent
+review found no Critical or Important issues; it recommended stricter static
+assertions and plan tracking. Assertions were strengthened and execution
+checkboxes updated; tests passed.
+
+### Task 2: Use prebuilt Node.js musl binaries on Alpine
+
+- [x] Add regression coverage for the global mise Node musl settings and the
+  Dockerfile config/runtime integration.
+- [x] Add `all_compile = false`, `node.compile = false`, the unofficial builds
+  mirror, and the musl flavor to the workload's global mise config.
+- [x] Install `libstdc++` for the downloaded Node.js binary and document the
+  unofficial-builds trade-off and runtime verification command.
+- [x] Build and compose the workload with the mise mixin; verify
+  `mise use -g node` and `mise exec -- node --version` in the sandbox.
