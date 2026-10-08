@@ -24,6 +24,16 @@ The workload starts Bash as the non-root `agent` user (UID/GID 1000) in
 mise --version
 ```
 
+To install Node.js as the global default, run `mise use -g node`. The Alpine
+workload configures mise to use prebuilt musl binaries rather than compiling
+Node.js from source, and includes the `libstdc++` runtime those binaries need.
+These Node.js binaries come from the community-maintained unofficial builds
+project; they are not official Node.js releases. Run Node.js through mise with
+`mise exec -- node --version`, or activate mise with
+`eval "$(mise activate bash)"` to use `node` directly in the shell.
+In policy-controlled sandboxes, the first install may require network approval
+for `unofficial-builds.nodejs.org`.
+
 ## Build the Alpine workload
 
 The workload and mixin use Alpine `3.24.2` as their build base.
@@ -42,8 +52,10 @@ docker buildx build ./alpine -f ./alpine/alpine.yaml \
   --platform linux/arm64 -t alpine-workload:arm64 --load
 ```
 
-The `alpine/` workload contains only the sandbox essentials (`bash`, `git`,
-`curl`, and CA certificates); mise is installed separately by `mise/`.
+The `alpine/` workload contains the sandbox essentials (`bash`, `git`, `curl`,
+and CA certificates), `libstdc++` for Node.js musl binaries, and global mise
+settings to select those binaries instead of compiling from source. mise is
+still installed separately by `mise/`.
 
 ## Build the mise mixin
 

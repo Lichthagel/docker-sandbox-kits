@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+import tomllib
 import unittest
 
 
@@ -35,19 +36,50 @@ class AlpineWorkloadTests(unittest.TestCase):
     def test_dockerfile_has_minimal_agent_environment(self):
         text = Path("alpine/alpine.dockerfile").read_text(encoding="utf-8")
         self.assertIn("FROM alpine:3.24.2\n", text)
-        self.assertIn(
-            "RUN apk add --no-cache bash git curl ca-certificates \\", text
-        )
+        self.assertIn("bash git curl ca-certificates", text)
+        self.assertIn("libstdc++", text)
         self.assertIn("adduser -D -u 1000", text)
         self.assertIn("addgroup -g 1000", text)
         self.assertIn("-s /bin/bash -h /home/agent agent", text)
         self.assertIn("mkdir -p /home/agent/workspace", text)
         self.assertIn("chown -R agent:agent /home/agent", text)
+        self.assertIn("COPY --chown=agent:agent mise-config.toml", text)
         self.assertIn("USER agent", text)
         self.assertIn("WORKDIR /home/agent/workspace", text)
         self.assertIn('ENTRYPOINT ["bash"]', text)
         self.assertIn("CMD []", text)
-        self.assertNotIn("mise", text.lower())
+        self.assertNotIn("apk add --no-cache mise", text.lower())
+
+    def test_mise_config_uses_prebuilt_node_musl_binaries(self):
+        config_path = Path("alpine/mise-config.toml")
+        self.assertTrue(
+            config_path.is_file(),
+            "Alpine workload must ship global mise settings for Node musl binaries",
+        )
+        config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+        dockerfile = Path("alpine/alpine.dockerfile").read_text(encoding="utf-8")
+
+        self.assertIs(config["settings"]["all_compile"], False)
+        self.assertIs(config["settings"]["node"]["compile"], False)
+        self.assertEqual(
+            config["settings"]["node"]["mirror_url"],
+            "https://unofficial-builds.nodejs.org/download/release/",
+        )
+        self.assertEqual(config["settings"]["node"]["flavor"], "musl")
+        self.assertIn(
+            "COPY --chown=agent:agent mise-config.toml "
+            "/home/agent/.config/mise/config.toml",
+            dockerfile,
+        )
+
+    def test_readme_documents_alpine_node_install_and_verification(self):
+        readme = Path("README.md").read_text(encoding="utf-8")
+
+        self.assertIn("mise use -g node", readme)
+        self.assertIn("mise exec -- node --version", readme)
+        self.assertIn('eval "$(mise activate bash)"', readme)
+        self.assertIn("community-maintained unofficial builds", readme)
+        self.assertIn("unofficial-builds.nodejs.org", readme)
 
     def test_readme_uses_local_workload_and_mixin(self):
         text = Path("README.md").read_text(encoding="utf-8")
