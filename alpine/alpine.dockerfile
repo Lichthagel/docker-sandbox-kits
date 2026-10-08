@@ -8,6 +8,7 @@ RUN apk add --no-cache bash git curl ca-certificates \
     && chown -R agent:agent /home/agent
 
 COPY --chown=agent:agent mise-config.toml /home/agent/.config/mise/config.toml
+COPY --chown=agent:agent bashrc /home/agent/.bashrc
 
 USER agent
 WORKDIR /home/agent/workspace

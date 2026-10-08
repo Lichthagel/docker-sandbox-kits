@@ -1,5 +1,9 @@
 from pathlib import Path
+import os
 import re
+import shutil
+import subprocess
+import tempfile
 import tomllib
 import unittest
 
@@ -49,6 +53,47 @@ class AlpineWorkloadTests(unittest.TestCase):
         self.assertIn('ENTRYPOINT ["bash"]', text)
         self.assertIn("CMD []", text)
         self.assertNotIn("apk add --no-cache mise", text.lower())
+
+    def test_interactive_bash_activates_mise(self):
+        bash = shutil.which("bash")
+        if bash is None or os.name == "nt":
+            self.skipTest("requires a native Bash executable")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            (temp_path / ".bashrc").write_bytes(Path("alpine/bashrc").read_bytes())
+            fake_mise = temp_path / "mise"
+            fake_mise.write_text(
+                "#!/bin/sh\n"
+                '[ "$1" = activate ] && [ "$2" = bash ] || exit 2\n'
+                "printf 'export MISE_TEST_ACTIVATED=enabled\\n'\n",
+                encoding="utf-8",
+            )
+            fake_mise.chmod(0o755)
+            env = os.environ.copy()
+            env["PATH"] = str(temp_path) + os.pathsep + env.get("PATH", "")
+            env["HOME"] = str(temp_path)
+            env.pop("BASH_ENV", None)
+
+            result = subprocess.run(
+                [
+                    bash,
+                    "--noprofile",
+                    "-ic",
+                    'printf "%s" "$MISE_TEST_ACTIVATED"',
+                ],
+                capture_output=True,
+                check=False,
+                env=env,
+                text=True,
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "enabled")
+
+    def test_dockerfile_installs_bashrc_for_agent(self):
+        dockerfile = Path("alpine/alpine.dockerfile").read_text(encoding="utf-8")
+        self.assertIn("COPY --chown=agent:agent bashrc /home/agent/.bashrc", dockerfile)
 
     def test_mise_config_uses_prebuilt_node_musl_binaries(self):
         config_path = Path("alpine/mise-config.toml")

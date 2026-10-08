@@ -29,8 +29,9 @@ workload configures mise to use prebuilt musl binaries rather than compiling
 Node.js from source, and includes the `libstdc++` runtime those binaries need.
 These Node.js binaries come from the community-maintained unofficial builds
 project; they are not official Node.js releases. Run Node.js through mise with
-`mise exec -- node --version`, or activate mise with
-`eval "$(mise activate bash)"` to use `node` directly in the shell.
+`mise exec -- node --version`. Interactive Bash sessions activate mise
+automatically; in a noninteractive Bash session, run
+`eval "$(mise activate bash)"` to use `node` directly.
 In policy-controlled sandboxes, the first install may require network approval
 for `unofficial-builds.nodejs.org`.
 
