@@ -42,17 +42,29 @@ class AlpineWorkloadTests(unittest.TestCase):
         self.assertIn("FROM alpine:3.24.2\n", text)
         self.assertIn("bash git curl ca-certificates", text)
         self.assertIn("libstdc++", text)
+        self.assertIn("docker docker-cli-compose tini-static", text)
         self.assertIn("adduser -D -u 1000", text)
-        self.assertIn("addgroup -g 1000", text)
+        self.assertIn("addgroup -S -g 1000", text)
+        self.assertIn("addgroup agent docker", text)
         self.assertIn("-s /bin/bash -h /home/agent agent", text)
         self.assertIn("mkdir -p /home/agent/workspace", text)
         self.assertIn("chown -R agent:agent /home/agent", text)
         self.assertIn("COPY --chown=agent:agent mise-config.toml", text)
+        self.assertIn("BASH_ENV=/etc/sandbox-persistent.sh", text)
+        self.assertIn('LABEL com.docker.sandboxes.start-docker="true"', text)
         self.assertIn("USER agent", text)
         self.assertIn("WORKDIR /home/agent/workspace", text)
-        self.assertIn('ENTRYPOINT ["bash"]', text)
-        self.assertIn("CMD []", text)
+        self.assertIn('ENTRYPOINT ["/sbin/tini-static", "-s", "--"]', text)
+        self.assertIn('CMD ["bash"]', text)
         self.assertNotIn("apk add --no-cache mise", text.lower())
+
+    def test_readme_documents_sandbox_docker_and_compose(self):
+        readme = Path("README.md").read_text(encoding="utf-8")
+
+        self.assertIn("Docker Engine", readme)
+        self.assertIn("docker info", readme)
+        self.assertIn("docker compose version", readme)
+        self.assertIn("private Docker Engine", readme)
 
     def test_interactive_bash_activates_mise(self):
         bash = shutil.which("bash")
