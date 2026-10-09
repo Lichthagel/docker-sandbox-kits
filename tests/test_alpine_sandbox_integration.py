@@ -10,6 +10,48 @@ import uuid
     "set RUN_SBX_INTEGRATION=1 to create a Docker Sandbox",
 )
 class AlpineSandboxIntegrationTests(unittest.TestCase):
+    def test_clone_mode_fetches_from_alpine_sandbox(self):
+        root = Path(__file__).resolve().parents[1]
+        sandbox = f"alpine-clone-test-{uuid.uuid4().hex[:10]}"
+
+        try:
+            create = subprocess.run(
+                [
+                    "sbx",
+                    "run",
+                    "--clone",
+                    "--name",
+                    sandbox,
+                    "--detached",
+                    str(root / "alpine"),
+                ],
+                cwd=root,
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=300,
+            )
+            self.assertEqual(create.returncode, 0, create.stdout + create.stderr)
+
+            fetch = subprocess.run(
+                ["git", "fetch", f"sandbox-{sandbox}"],
+                cwd=root,
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=120,
+            )
+            self.assertEqual(fetch.returncode, 0, fetch.stdout + fetch.stderr)
+        finally:
+            subprocess.run(
+                ["sbx", "rm", "--force", sandbox],
+                cwd=root,
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=120,
+            )
+
     def test_private_docker_engine_buildx_and_compose(self):
         root = Path(__file__).resolve().parents[1]
         sandbox = f"alpine-docker-test-{uuid.uuid4().hex[:10]}"

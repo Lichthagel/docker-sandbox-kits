@@ -40,7 +40,7 @@ class AlpineWorkloadTests(unittest.TestCase):
     def test_dockerfile_has_minimal_agent_environment(self):
         text = Path("alpine/alpine.dockerfile").read_text(encoding="utf-8")
         self.assertIn("FROM alpine:3.24.2\n", text)
-        self.assertIn("bash git curl ca-certificates", text)
+        self.assertIn("bash git git-daemon curl ca-certificates", text)
         self.assertIn("libstdc++", text)
         self.assertIn("docker docker-cli-compose tini-static", text)
         self.assertIn("adduser -D -u 1000", text)
