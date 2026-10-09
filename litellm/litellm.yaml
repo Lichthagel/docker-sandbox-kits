@@ -1,0 +1,22 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: mixin
+displayName: LiteLLM
+description: Configures the llm.licht.moe endpoint for OpenAI-compatible clients.
+
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow: [llm.licht.moe]
+  - type: com.docker.sandbox/credential@1
+    config:
+      service: licht-moe-litellm
+      phase: runtime
+      apiKey:
+        name: ""
+        proxyManaged: true
+        inject:
+          - domain: llm.licht.moe
+            header: Authorization
+            format: "Bearer %s"

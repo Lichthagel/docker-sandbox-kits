@@ -98,6 +98,42 @@ Use `--platform linux/arm64` to build for arm64. The override must be a
 three-part version such as `2026.10.3`; leave it unset for the installer's
 latest-release behavior.
 
+## Use the LiteLLM deployment
+
+The `litellm/` mixin configures OpenAI-compatible clients to use
+`https://llm.licht.moe/v1`. Compose it with the Alpine workload and, optionally,
+the mise mixin:
+
+```sh
+sbx run ./alpine --kit ./mise --kit ./litellm
+```
+
+Inside the sandbox, OpenAI-compatible SDKs can use `OPENAI_BASE_URL` without
+extra client configuration. The mixin also sets `OPENAI_API_BASE` for clients
+that use the legacy variable, and `LITELLM_BASE_URL` for LiteLLM-specific
+integrations. For example, with the OpenAI Python SDK:
+
+```python
+from openai import OpenAI
+
+client = OpenAI()  # reads OPENAI_BASE_URL and OPENAI_API_KEY from the environment
+print(client.models.list())
+```
+
+The kit permits network access to `llm.licht.moe` and declares the
+`licht-moe-litellm` credential service, allowing Docker Sandbox's host-side
+proxy to inject its key as an `Authorization: Bearer` header for requests to
+that host. Store your LiteLLM virtual key as the service secret on the host:
+
+```sh
+sbx secret set licht-moe-litellm
+```
+
+Enter the key at the interactive prompt and approve the kit's credential
+request when prompted. With proxy-managed credentials, the real key stays on
+the host; the sandbox gets no key in its environment. If the deployment does
+not require authentication, the service is optional and you can run without a
+stored secret.
 The local kit directories can be passed directly to `sbx`; manually building
 the kit images is not required for local use. To publish kits, push their
 images to a registry and use the registry references.
