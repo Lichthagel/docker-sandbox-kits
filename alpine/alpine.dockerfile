@@ -1,7 +1,9 @@
 FROM alpine:3.24.2
 
-RUN apk add --no-cache bash git curl ca-certificates \
+RUN apk add --no-cache bash git curl ca-certificates doas \
     libstdc++ docker docker-cli-compose tini-static \
+    && printf '%s\n' 'permit nopass agent as root' > /etc/doas.conf \
+    && chmod 0400 /etc/doas.conf \
     && addgroup -S -g 1000 agent \
     && adduser -D -u 1000 -G agent -s /bin/bash -h /home/agent agent \
     && addgroup agent docker \

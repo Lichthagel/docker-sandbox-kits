@@ -58,6 +58,16 @@ class AlpineWorkloadTests(unittest.TestCase):
         self.assertIn('CMD ["bash"]', text)
         self.assertNotIn("apk add --no-cache mise", text.lower())
 
+    def test_agent_can_use_doas_without_password(self):
+        dockerfile = Path("alpine/alpine.dockerfile").read_text(encoding="utf-8")
+
+        self.assertRegex(dockerfile, r"apk add --no-cache[\s\S]*\bdoas\b")
+        self.assertIn(
+            "permit nopass agent as root",
+            dockerfile,
+        )
+        self.assertIn("chmod 0400 /etc/doas.conf", dockerfile)
+
     def test_readme_documents_sandbox_docker_and_compose(self):
         readme = Path("README.md").read_text(encoding="utf-8")
 
