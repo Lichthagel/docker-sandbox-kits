@@ -54,7 +54,7 @@ class AlpineWorkloadTests(unittest.TestCase):
         self.assertIn('LABEL com.docker.sandboxes.start-docker="true"', text)
         self.assertIn("USER agent", text)
         self.assertIn("WORKDIR /home/agent/workspace", text)
-        self.assertIn('ENTRYPOINT ["/sbin/tini-static", "--"]', text)
+        self.assertIn('ENTRYPOINT ["/sbin/tini-static", "-s", "--"]', text)
         self.assertIn('CMD ["bash"]', text)
         self.assertNotIn("apk add --no-cache mise", text.lower())
 

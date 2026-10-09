@@ -24,6 +24,10 @@ class AlpineSandboxIntegrationTests(unittest.TestCase):
                 timeout=300,
             )
             self.assertEqual(create.returncode, 0, create.stdout + create.stderr)
+            self.assertNotIn(
+                "Tini is not running as PID 1",
+                create.stdout + create.stderr,
+            )
 
             smoke = subprocess.run(
                 [
@@ -50,6 +54,10 @@ class AlpineSandboxIntegrationTests(unittest.TestCase):
                 timeout=600,
             )
             self.assertEqual(smoke.returncode, 0, smoke.stdout + smoke.stderr)
+            self.assertNotIn(
+                "Tini is not running as PID 1",
+                smoke.stdout + smoke.stderr,
+            )
             self.assertIn("Hello from Docker!", smoke.stdout)
             self.assertIn("Docker build works", smoke.stdout)
         finally:

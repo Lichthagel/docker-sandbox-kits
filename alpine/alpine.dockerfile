@@ -28,5 +28,5 @@ ENV HOME=/home/agent \
 
 USER agent
 WORKDIR /home/agent/workspace
-ENTRYPOINT ["/sbin/tini-static", "--"]
+ENTRYPOINT ["/sbin/tini-static", "-s", "--"]
 CMD ["bash"]
