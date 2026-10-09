@@ -29,7 +29,7 @@ class AlpineWorkloadTests(unittest.TestCase):
         self.assertIn('default: ""', descriptor)
         self.assertIn("buildArg: MISE_VERSION", descriptor)
         self.assertIn("pattern: '^([0-9]+\\.[0-9]+\\.[0-9]+)?$'", descriptor)
-        self.assertNotIn("provides:", descriptor)
+        self.assertIn('provides: ["mise@1"]', descriptor)
         self.assertIn("FROM alpine:3.24.2 AS build", dockerfile)
         self.assertIn('MISE_VERSION="${MISE_VERSION:+v$MISE_VERSION}"', dockerfile)
         self.assertIn("latest eligible stable mise release", readme)

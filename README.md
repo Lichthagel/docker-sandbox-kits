@@ -1,7 +1,7 @@
 # Docker Sandbox kits
 
 This project contains an Alpine Linux Docker Sandbox v3 workload with Docker
-Engine support, and a separate `mise` tool mixin.
+Engine support, and separate mise, LiteLLM, and OpenCode V2 mixins.
 
 ## Run the Alpine workload with mise
 
@@ -48,6 +48,40 @@ automatically; in a noninteractive Bash session, run
 `eval "$(mise activate bash)"` to use `node` directly.
 In policy-controlled sandboxes, the first install may require network approval
 for `unofficial-builds.nodejs.org`.
+
+## Use OpenCode V2
+
+The `opencode/` mixin requires `mise/`. It installs Node.js LTS and OpenCode
+for the `agent` user during sandbox creation using:
+
+```sh
+mise use -g --tool-option 'allow_builds=["@opencode/cli"]' npm:@opencode/cli
+```
+
+```sh
+sbx run ./alpine --kit ./mise --kit ./opencode
+# Include the LiteLLM deployment:
+sbx run ./alpine --kit ./mise --kit ./litellm --kit ./opencode
+```
+
+Inside the sandbox, run `opencode`. In noninteractive shells, use
+`mise exec -- opencode --version` or `mise exec -- opencode`.
+
+When `LITELLM_BASE_URL` is nonempty, the startup hook configures the V2
+`litellm` provider and
+[`opencode-plugin-litellm@latest`](https://github.com/yuseferi/opencode-litellm/)
+for dynamic model discovery. It normalizes the endpoint to end in `/v1`.
+No secret check or authentication probe is performed. Store the host-side
+`licht-moe-litellm` secret as described below; the existing LiteLLM mixin
+injects authentication through the proxy without exposing the key to OpenCode.
+Without `LITELLM_BASE_URL`, no OpenCode configuration is written.
+
+Setup merges into `~/.config/opencode/opencode.json` (or under
+`XDG_CONFIG_HOME`), preserving unrelated settings and curated models. Existing
+JSONC files are left untouched; if `opencode.json` itself contains comments or
+trailing commas, setup skips it with a warning instead of failing startup.
+Installation permits the npm registry and
+Node.js download hosts; runtime npm access allows OpenCode to load plugins.
 
 ## Build the Alpine workload
 

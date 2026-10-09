@@ -3,6 +3,7 @@ schemaVersion: "3"
 kind: mixin
 displayName: mise
 description: Adds the mise version manager to an Alpine-based workload.
+provides: ["mise@1"]
 
 args:
   version:
