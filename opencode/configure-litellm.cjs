@@ -33,11 +33,12 @@ if (!config.plugins.some((entry) => {
 }
 config.providers ??= {};
 const provider = config.providers.litellm ??= {};
-provider.name ??= "LiteLLM (proxy)";
+provider.name ??= "LiteLLM";
 provider.package ??= "@opencode/ai/providers/openai-compatible";
 provider.settings ??= {};
 const endpoint = baseURL.replace(/\/+$/, "");
 provider.settings.baseURL = endpoint.endsWith("/v1") ? endpoint : `${endpoint}/v1`;
+provider.settings.formatModelNames = false;
 
 fs.mkdirSync(directory, { recursive: true });
 fs.writeFileSync(filename, `${JSON.stringify(config, null, 2)}\n`);
