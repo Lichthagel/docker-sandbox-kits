@@ -1,0 +1,27 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: mixin
+displayName: OpenCode V2
+description: Installs OpenCode V2 with mise and integrates LiteLLM when configured.
+requires: [mise]
+
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      install:
+        allow: [registry.npmjs.org, unofficial-builds.nodejs.org, nodejs.org]
+      runtime:
+        allow: [registry.npmjs.org]
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        - command: [sh, /usr/local/share/opencode-kit/install.sh]
+          user: agent
+          env: [HTTP_PROXY, HTTPS_PROXY, NO_PROXY, http_proxy, https_proxy, no_proxy, NODE_EXTRA_CA_CERTS, NODE_USE_ENV_PROXY, SSL_CERT_FILE]
+          description: Install Node.js and OpenCode with mise
+      startup:
+        - command: [mise, exec, --, node, /usr/local/share/opencode-kit/configure-litellm.cjs]
+          user: agent
+          env: [LITELLM_BASE_URL, XDG_CONFIG_HOME]
+          background: false
+          description: Configure the LiteLLM provider when its base URL is present
