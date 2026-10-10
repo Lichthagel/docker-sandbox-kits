@@ -24,12 +24,22 @@ if (fs.existsSync(filename)) {
 
 config.$schema ??= "https://opencode.ai/config.json";
 config.plugins ??= [];
-// Do not add a second copy if the user has pinned or configured the plugin.
-if (!config.plugins.some((entry) => {
+let hasLiteLLMPlugin = false;
+config.plugins = config.plugins.map((entry) => {
   const name = typeof entry === "string" ? entry : entry.package;
-  return name === "opencode-plugin-litellm" || name.startsWith("opencode-plugin-litellm@");
-})) {
-  config.plugins.push("opencode-plugin-litellm@latest");
+  if (name !== "opencode-plugin-litellm" && !name.startsWith("opencode-plugin-litellm@")) {
+    return entry;
+  }
+  hasLiteLLMPlugin = true;
+  const plugin = typeof entry === "string" ? { package: entry } : entry;
+  // Initial discovery can run before provider settings are available in V2.
+  return { ...plugin, options: { ...plugin.options, formatModelNames: false } };
+});
+if (!hasLiteLLMPlugin) {
+  config.plugins.push({
+    package: "opencode-plugin-litellm@latest",
+    options: { formatModelNames: false },
+  });
 }
 config.providers ??= {};
 const provider = config.providers.litellm ??= {};

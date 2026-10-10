@@ -38,11 +38,14 @@ class OpenCodeMixinTests(unittest.TestCase):
                 config = json.loads(
                     (Path(temp) / "opencode" / "opencode.json").read_text()
                 )
-                self.assertEqual(config["plugins"], ["opencode-plugin-litellm@latest"])
+                self.assertEqual(config["plugins"], [{
+                    "package": "opencode-plugin-litellm@latest",
+                    "options": {"formatModelNames": False},
+                }])
                 self.assertEqual(config["providers"]["litellm"], {
-                    "name": "LiteLLM (proxy)",
+                    "name": "LiteLLM",
                     "package": "@opencode/ai/providers/openai-compatible",
-                    "settings": {"baseURL": "https://llm.licht.moe/v1"},
+                    "settings": {"baseURL": "https://llm.licht.moe/v1", "formatModelNames": False},
                 })
 
     def test_repeated_setup_preserves_other_settings_and_curated_models(self):
@@ -60,8 +63,34 @@ class OpenCodeMixinTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
             config = json.loads(path.read_text())
             self.assertEqual(config["model"], "other/model")
-            self.assertEqual(config["plugins"], ["other-plugin", "opencode-plugin-litellm@latest"])
+            self.assertEqual(config["plugins"], ["other-plugin", {
+                "package": "opencode-plugin-litellm@latest",
+                "options": {"formatModelNames": False},
+            }])
             self.assertEqual(config["providers"]["litellm"]["models"], {"custom": {}})
+
+    def test_existing_plugin_entries_gain_options_without_losing_pins(self):
+        for entry in (
+            "opencode-plugin-litellm@1.4.2",
+            {"package": "opencode-plugin-litellm@1.4.2",
+             "options": {"formatModelNames": True, "includeModels": ["team/*"]}},
+        ):
+            with self.subTest(entry=entry), tempfile.TemporaryDirectory() as temp:
+                directory = Path(temp) / "opencode"
+                directory.mkdir()
+                path = directory / "opencode.json"
+                path.write_text(json.dumps({"plugins": [entry]}))
+                for _ in range(2):
+                    result = self.configure(Path(temp), "https://llm.licht.moe")
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                config = json.loads(path.read_text())
+                options = {"formatModelNames": False}
+                if isinstance(entry, dict):
+                    options["includeModels"] = ["team/*"]
+                self.assertEqual(config["plugins"], [{
+                    "package": "opencode-plugin-litellm@1.4.2",
+                    "options": options,
+                }])
 
     def test_jsonc_content_is_preserved_without_failing_startup(self):
         with tempfile.TemporaryDirectory() as temp:

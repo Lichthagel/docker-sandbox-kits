@@ -71,6 +71,9 @@ When `LITELLM_BASE_URL` is nonempty, the startup hook configures the V2
 `litellm` provider and
 [`opencode-plugin-litellm@latest`](https://github.com/yuseferi/opencode-litellm/)
 for dynamic model discovery. It normalizes the endpoint to end in `/v1`.
+Model names remain raw LiteLLM IDs: setup disables formatting in both provider
+settings and plugin options so the setting also applies during V2's initial
+discovery. Existing plugin version pins and unrelated options are preserved.
 No secret check or authentication probe is performed. Store the host-side
 `licht-moe-litellm` secret as described below; the existing LiteLLM mixin
 injects authentication through the proxy without exposing the key to OpenCode.
