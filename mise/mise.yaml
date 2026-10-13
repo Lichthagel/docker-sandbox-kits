@@ -2,10 +2,15 @@
 schemaVersion: "3"
 kind: mixin
 displayName: mise
-description: Adds the mise version manager to an Alpine-based workload.
+description: Adds the mise version manager to glibc- or musl-based workloads.
 provides: ["mise@1"]
 
 args:
+  libc:
+    default: "glibc"
+    enum: ["glibc", "musl"]
+    description: libc variant for the target workload; Alpine requires musl
+    buildArg: MISE_LIBC
   version:
     default: ""
     pattern: '^([0-9]+\.[0-9]+\.[0-9]+)?$'

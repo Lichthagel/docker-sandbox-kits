@@ -32,7 +32,10 @@ class LiteLLMMixinTests(unittest.TestCase):
     def test_readme_documents_service_secret_and_authentication(self):
         readme = Path("README.md").read_text(encoding="utf-8")
 
-        self.assertIn("sbx run ./alpine --kit ./mise --kit ./litellm", readme)
+        self.assertIn(
+            "sbx run ./alpine --kit ./mise --kit-arg libc=musl --kit ./litellm",
+            readme,
+        )
         self.assertIn("llm.licht.moe/v1", readme)
         self.assertIn("sbx secret set licht-moe-litellm", readme)
         self.assertIn("proxy-managed", readme)

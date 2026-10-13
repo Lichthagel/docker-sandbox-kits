@@ -1,7 +1,7 @@
 # Docker Sandbox kits
 
-This project contains an Alpine Linux Docker Sandbox v3 workload with Docker
-Engine support, and separate mise, LiteLLM, and OpenCode V2 mixins.
+This project contains Alpine Linux and Fedora Docker Sandbox v3 workloads with
+Docker Engine support, and separate mise, LiteLLM, and OpenCode V2 mixins.
 
 ## Run the Alpine workload with mise
 
@@ -10,12 +10,13 @@ the default branch of this GitHub repository:
 
 ```sh
 sbx settings set kit.allowedSources '["docker.io/","github.com/Lichthagel/"]'
-sbx run 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=alpine' --kit 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=mise'
+sbx run 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=alpine' --kit 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=mise' --kit-arg libc=musl
 ```
 
 The allowed-sources setting permits kits from Docker Hub and this GitHub
 account. The references follow the repository's default branch. For local
-development, the equivalent command is `sbx run ./alpine --kit ./mise`.
+development, the equivalent command is
+`sbx run ./alpine --kit ./mise --kit-arg libc=musl`.
 
 The workload starts Bash as the non-root `agent` user (UID/GID 1000) in
 `/home/agent/workspace`. It includes the Docker CLI, Buildx, and Compose, and
@@ -49,6 +50,27 @@ automatically; in a noninteractive Bash session, run
 In policy-controlled sandboxes, the first install may require network approval
 for `unofficial-builds.nodejs.org`.
 
+## Run the Fedora workload with mixins
+
+Use Fedora's native glibc mise binary by leaving the `libc` argument at its
+default. The Fedora workload includes Docker Engine, Buildx, and Compose, and
+starts Bash as the non-root `agent` user in `/home/agent/workspace`.
+
+```sh
+sbx run ./fedora --kit ./mise
+# Include the LiteLLM deployment and OpenCode V2:
+sbx run ./fedora --kit ./mise --kit ./litellm --kit ./opencode
+```
+
+The `mise` mixin defaults to `libc=glibc` for Fedora and other glibc workloads.
+Alpine uses musl, so select the musl installer binary with
+`--kit-arg libc=musl` when composing it there. The argument accepts only
+`glibc` or `musl` and chooses the corresponding build stage; only that stage is
+included in the mixin.
+Passing arguments to local source Kits requires Docker Sandboxes `sbx` 0.48.0
+or newer. With older versions, Fedora's default glibc composition works, but
+the Alpine musl override cannot be resolved for a local kit directory.
+
 ## Use OpenCode V2
 
 The `opencode/` mixin requires `mise/`. It installs Node.js LTS and OpenCode
@@ -59,9 +81,11 @@ mise use -g --tool-option 'allow_builds=["@opencode/cli"]' npm:@opencode/cli
 ```
 
 ```sh
-sbx run ./alpine --kit ./mise --kit ./opencode
+sbx run ./alpine --kit ./mise --kit-arg libc=musl --kit ./opencode
 # Include the LiteLLM deployment:
-sbx run ./alpine --kit ./mise --kit ./litellm --kit ./opencode
+sbx run ./alpine --kit ./mise --kit-arg libc=musl --kit ./litellm --kit ./opencode
+# Fedora uses the default glibc variant:
+sbx run ./fedora --kit ./mise --kit ./litellm --kit ./opencode
 ```
 
 Inside the sandbox, run `opencode`. In noninteractive shells, use
@@ -88,7 +112,9 @@ Node.js download hosts; runtime npm access allows OpenCode to load plugins.
 
 ## Build the Alpine workload
 
-The workload and mixin use Alpine `3.24.2` as their build base.
+The Alpine workload uses Alpine `3.24.2` as its build base. The `mise` mixin
+uses Fedora 44 for the default glibc binary and Alpine `3.24.2` for the optional
+musl binary.
 
 Build for the target architecture with Docker Buildx:
 
@@ -119,8 +145,10 @@ docker buildx build ./mise -f ./mise/mise.yaml \
   --platform linux/amd64 -t mise-mixin:dev --load
 ```
 
-To build an arm64 image, use `--platform linux/arm64` instead. The target
-platform determines which musl binary the installer downloads.
+To build an arm64 image, use `--platform linux/arm64` instead. The `libc`
+argument defaults to `glibc`; the build runs only the selected libc-specific
+stage and leaves installer autodetection enabled in that stage. To build a
+musl variant for Alpine, add `--build-arg libc=musl` to the Buildx command.
 
 By default, the installer selects the latest eligible stable mise release
 (releases at least 24 hours old) at kit build time. To pin a release for a
@@ -138,11 +166,13 @@ latest-release behavior.
 ## Use the LiteLLM deployment
 
 The `litellm/` mixin configures OpenAI-compatible clients to use
-`https://llm.licht.moe/v1`. Compose it with the Alpine workload and, optionally,
+`https://llm.licht.moe/v1`. Compose it with either workload and, optionally,
 the mise mixin:
 
 ```sh
-sbx run ./alpine --kit ./mise --kit ./litellm
+sbx run ./alpine --kit ./mise --kit-arg libc=musl --kit ./litellm
+# Fedora uses the mixin's default glibc variant:
+sbx run ./fedora --kit ./mise --kit ./litellm
 ```
 
 Inside the sandbox, OpenAI-compatible SDKs can use `OPENAI_BASE_URL` without
@@ -174,3 +204,15 @@ stored secret.
 The local kit directories can be passed directly to `sbx`; manually building
 the kit images is not required for local use. To publish kits, push their
 images to a registry and use the registry references.
+
+## Build the Fedora workload
+
+The Fedora workload uses Fedora 44 and Fedora's `moby-engine`, Docker CLI,
+Buildx, and Compose packages.
+
+```sh
+docker buildx build ./fedora -f ./fedora/fedora.yaml \
+  --platform linux/amd64 -t fedora-workload:amd64 --load
+```
+
+Use `--platform linux/arm64` and a matching tag to build for arm64.

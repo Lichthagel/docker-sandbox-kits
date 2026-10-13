@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
@@ -111,11 +112,19 @@ class OpenCodeMixinTests(unittest.TestCase):
 )
 class OpenCodeSandboxIntegrationTests(unittest.TestCase):
     def test_install_and_conditional_litellm_setup(self):
+        version = subprocess.run(
+            ["sbx", "version"], capture_output=True, check=False, text=True
+        )
+        match = re.search(r"v(\d+)\.(\d+)\.(\d+)", version.stdout)
+        if match is None or tuple(map(int, match.groups())) < (0, 48, 0):
+            self.skipTest("local build-phase kit arguments require sbx 0.48.0 or newer")
+
         sandbox = f"opencode-test-{uuid.uuid4().hex[:10]}"
         try:
             create = subprocess.run(
                 ["sbx", "run", str(ROOT / "alpine"), "--kit", str(ROOT / "mise"),
-                 "--kit", str(ROOT / "opencode"), "--name", sandbox, "--detached"],
+                 "--kit-arg", "libc=musl", "--kit", str(ROOT / "opencode"),
+                 "--name", sandbox, "--detached"],
                 capture_output=True, text=True, timeout=300,
             )
             self.assertEqual(create.returncode, 0, create.stdout + create.stderr)
@@ -127,6 +136,35 @@ class OpenCodeSandboxIntegrationTests(unittest.TestCase):
                  "/usr/local/share/opencode-kit/configure-litellm.cjs; "
                  "cat /home/agent/.config/opencode/opencode.json"],
                 capture_output=True, text=True, timeout=60,
+            )
+            self.assertEqual(smoke.returncode, 0, smoke.stdout + smoke.stderr)
+            self.assertIn("opencode v2.", smoke.stdout)
+            self.assertIn('"baseURL": "https://llm.licht.moe/v1"', smoke.stdout)
+        finally:
+            subprocess.run(
+                ["sbx", "rm", "--force", sandbox],
+                capture_output=True, text=True, timeout=120,
+            )
+
+    def test_fedora_uses_default_glibc_mise_with_litellm_and_opencode(self):
+        sandbox = f"fedora-opencode-test-{uuid.uuid4().hex[:10]}"
+        try:
+            create = subprocess.run(
+                ["sbx", "run", str(ROOT / "fedora"), "--kit", str(ROOT / "mise"),
+                 "--kit", str(ROOT / "litellm"), "--kit", str(ROOT / "opencode"),
+                 "--name", sandbox, "--detached"],
+                capture_output=True, text=True, timeout=600,
+            )
+            self.assertEqual(create.returncode, 0, create.stdout + create.stderr)
+            smoke = subprocess.run(
+                ["sbx", "exec", sandbox, "sh", "-lc",
+                 "set -eu; mise --version; mise use -g node@lts; "
+                 "mise exec -- node --version; mise exec -- opencode --version; "
+                 "test -f /home/agent/.config/opencode/opencode.json; "
+                 "grep -q 'https://llm.licht.moe/v1' "
+                 "/home/agent/.config/opencode/opencode.json; "
+                 "cat /home/agent/.config/opencode/opencode.json"],
+                capture_output=True, text=True, timeout=600,
             )
             self.assertEqual(smoke.returncode, 0, smoke.stdout + smoke.stderr)
             self.assertIn("opencode v2.", smoke.stdout)

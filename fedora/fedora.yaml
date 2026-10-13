@@ -1,0 +1,8 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: workload
+displayName: Fedora Bash
+description: A minimal Fedora Linux workload with an interactive Bash shell.
+
+capabilities:
+  - type: com.docker.sandbox/sbx@1

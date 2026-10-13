@@ -30,7 +30,7 @@ class AlpineWorkloadTests(unittest.TestCase):
         self.assertIn("buildArg: MISE_VERSION", descriptor)
         self.assertIn("pattern: '^([0-9]+\\.[0-9]+\\.[0-9]+)?$'", descriptor)
         self.assertIn('provides: ["mise@1"]', descriptor)
-        self.assertIn("FROM alpine:3.24.2 AS build", dockerfile)
+        self.assertIn("FROM alpine:3.24.2 AS build-musl", dockerfile)
         self.assertIn('MISE_VERSION="${MISE_VERSION:+v$MISE_VERSION}"', dockerfile)
         self.assertIn("latest eligible stable mise release", readme)
         self.assertIn("at kit build time", readme)
@@ -150,7 +150,10 @@ class AlpineWorkloadTests(unittest.TestCase):
 
     def test_readme_uses_local_workload_and_mixin(self):
         text = Path("README.md").read_text(encoding="utf-8")
-        self.assertIn("sbx run ./alpine --kit ./mise", text)
+        self.assertIn(
+            "sbx run ./alpine --kit ./mise --kit-arg libc=musl",
+            text,
+        )
         self.assertIn("mise --version", text)
         self.assertIn("--platform linux/amd64", text)
         self.assertIn("--platform linux/arm64", text)
