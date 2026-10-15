@@ -13,6 +13,8 @@ class ShellLineEndingTests(unittest.TestCase):
         ).stdout.decode().split("\0")
         for name in filter(None, files):
             path = ROOT / name
+            if not path.is_file():
+                continue
             content = path.read_bytes()
             if path.name != "bashrc" and path.suffix != ".sh" and not content.startswith(
                 (b"#!/bin/bash", b"#!/bin/sh")

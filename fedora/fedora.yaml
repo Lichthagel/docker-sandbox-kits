@@ -6,3 +6,10 @@ description: A minimal Fedora Linux workload with an interactive Bash shell.
 
 capabilities:
   - type: com.docker.sandbox/sbx@1
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        - command: [bash, /usr/local/share/fedora-kit/docker-registry-ca.sh]
+          user: root
+          env: [PROXY_CA_CERT_B64]
+          description: Install Docker Sandbox proxy CA into system and Docker trust stores

@@ -21,6 +21,9 @@ class FedoraWorkloadTests(unittest.TestCase):
         dockerfile = (ROOT / "fedora" / "fedora.dockerfile").read_text(
             encoding="utf-8"
         )
+        descriptor = (ROOT / "fedora" / "fedora.yaml").read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn("FROM fedora:44", dockerfile)
         for package in (
@@ -46,8 +49,14 @@ class FedoraWorkloadTests(unittest.TestCase):
         self.assertIn('LABEL com.docker.sandboxes.start-docker="true"', dockerfile)
         self.assertIn('ENTRYPOINT ["/usr/bin/tini-static", "-s", "--"]', dockerfile)
         self.assertIn('CMD ["bash"]', dockerfile)
-        self.assertIn("docker-registry-ca", dockerfile)
-        self.assertIn("COPY docker /usr/local/bin/docker", dockerfile)
+        self.assertIn(
+            "install -m 0755 /usr/local/sbin/docker-registry-ca", dockerfile
+        )
+        self.assertIn("/usr/local/share/fedora-kit", dockerfile)
+        self.assertIn("com.docker.sandbox/lifecycle@1", descriptor)
+        self.assertIn("/usr/local/share/fedora-kit/docker-registry-ca.sh", descriptor)
+        self.assertIn("user: root", descriptor)
+        self.assertIn("env: [PROXY_CA_CERT_B64]", descriptor)
         self.assertIn("USER agent", dockerfile)
         self.assertIn("WORKDIR /home/agent/workspace", dockerfile)
         self.assertIn("alternatives --set iptables /usr/sbin/iptables-nft", dockerfile)
@@ -56,10 +65,7 @@ class FedoraWorkloadTests(unittest.TestCase):
 
     def test_bash_activates_mise(self):
         bashrc = (ROOT / "fedora" / "bashrc").read_text(encoding="utf-8")
-        self.assertEqual(
-            bashrc.splitlines(),
-            ["/usr/local/sbin/docker-registry-ca", 'eval "$(mise activate bash)"'],
-        )
+        self.assertEqual(bashrc.strip(), 'eval "$(mise activate bash)"')
 
     def test_docker_registry_ca_installer_is_safe_without_proxy_ca(self):
         installer = (ROOT / "fedora" / "docker-registry-ca.sh").read_text(
@@ -70,24 +76,16 @@ class FedoraWorkloadTests(unittest.TestCase):
         )
         self.assertIn('"${PROXY_CA_CERT_B64:-}"', installer)
         self.assertIn("/etc/docker/certs.d/docker.io/ca.crt", installer)
-        self.assertIn("sudo install -m 0644", installer)
-        self.assertIn(
-            "chmod 0755 /usr/local/sbin/docker-registry-ca /usr/local/bin/docker",
-            dockerfile,
-        )
-        wrapper = (ROOT / "fedora" / "docker").read_text(encoding="utf-8")
-        self.assertIn("/usr/local/sbin/docker-registry-ca", wrapper)
-        self.assertIn('exec /usr/bin/docker "$@"', wrapper)
+        self.assertIn("install_privileged", installer)
 
-    def test_proxy_ca_installer_updates_system_trust_before_bash_activation(self):
+    def test_proxy_ca_installer_updates_both_persistent_trust_stores(self):
         installer = (ROOT / "fedora" / "docker-registry-ca.sh").read_text(
             encoding="utf-8"
         )
-        bashrc = (ROOT / "fedora" / "bashrc").read_text(encoding="utf-8")
 
         self.assertIn("/etc/pki/ca-trust/source/anchors/sandbox-proxy.crt", installer)
         self.assertIn("sudo update-ca-trust", installer)
-        self.assertIn("/usr/local/sbin/docker-registry-ca", bashrc)
+        self.assertIn("/etc/docker/certs.d/docker.io/ca.crt", installer)
 
     def test_readme_documents_fedora_and_libc_selection(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")

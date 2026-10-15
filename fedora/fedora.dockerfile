@@ -18,9 +18,10 @@ RUN groupadd --gid 1000 agent \
 RUN mkdir -p /etc/docker/certs.d/docker.io
 
 COPY docker-registry-ca.sh /usr/local/sbin/docker-registry-ca
-COPY docker /usr/local/bin/docker
 
-RUN chmod 0755 /usr/local/sbin/docker-registry-ca /usr/local/bin/docker
+RUN mkdir -p /usr/local/share/fedora-kit \
+    && install -m 0755 /usr/local/sbin/docker-registry-ca \
+        /usr/local/share/fedora-kit/docker-registry-ca.sh
 
 COPY --chown=agent:agent bashrc /home/agent/.bashrc
 

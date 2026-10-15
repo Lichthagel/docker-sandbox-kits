@@ -1,5 +1,0 @@
-#!/bin/bash
-set -e
-
-/usr/local/sbin/docker-registry-ca
-exec /usr/bin/docker "$@"

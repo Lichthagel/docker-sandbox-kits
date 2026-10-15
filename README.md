@@ -208,7 +208,10 @@ images to a registry and use the registry references.
 ## Build the Fedora workload
 
 The Fedora workload uses Fedora 44 and Fedora's `moby-engine`, Docker CLI,
-Buildx, and Compose packages.
+Buildx, and Compose packages. At sandbox creation, an install hook adds the
+host-injected proxy CA to Fedora's system and Docker registry trust stores so
+OpenCode, mise, and Docker use the same CA without shell or Docker-command
+wrappers.
 
 ```sh
 docker buildx build ./fedora -f ./fedora/fedora.yaml \
