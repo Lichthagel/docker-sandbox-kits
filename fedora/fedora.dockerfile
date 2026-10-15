@@ -1,4 +1,4 @@
-FROM fedora:44
+FROM fedora:46
 
 RUN dnf install -y bash ca-certificates curl docker-buildx docker-cli \
         docker-compose git git-daemon iptables-nft libstdc++ moby-engine sudo tini-static \

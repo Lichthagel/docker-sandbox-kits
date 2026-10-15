@@ -11,7 +11,7 @@ RUN mkdir -p /out/usr/local/bin \
           MISE_INSTALL_PATH=/out/usr/local/bin/mise \
           sh
 
-FROM fedora:44 AS build-glibc
+FROM fedora:46 AS build-glibc
 
 ARG MISE_VERSION
 
