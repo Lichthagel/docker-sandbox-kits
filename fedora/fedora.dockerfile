@@ -23,8 +23,6 @@ RUN mkdir -p /usr/local/share/fedora-kit \
     && install -m 0755 /usr/local/sbin/docker-registry-ca \
         /usr/local/share/fedora-kit/docker-registry-ca.sh
 
-COPY --chown=agent:agent bashrc /home/agent/.bashrc
-
 RUN touch /etc/sandbox-persistent.sh \
     && chown agent:agent /etc/sandbox-persistent.sh \
     && chmod 0644 /etc/sandbox-persistent.sh \

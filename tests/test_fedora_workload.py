@@ -63,9 +63,10 @@ class FedoraWorkloadTests(unittest.TestCase):
         self.assertNotIn("apk add", dockerfile)
         self.assertNotIn("mise", dockerfile.lower())
 
-    def test_bash_activates_mise(self):
-        bashrc = (ROOT / "fedora" / "bashrc").read_text(encoding="utf-8")
-        self.assertEqual(bashrc.strip(), 'eval "$(mise activate bash)"')
+    def test_workloads_do_not_ship_base_bashrc_files(self):
+        for workload in ("alpine", "fedora"):
+            with self.subTest(workload=workload):
+                self.assertFalse((ROOT / workload / "bashrc").exists())
 
     def test_docker_registry_ca_installer_is_safe_without_proxy_ca(self):
         installer = (ROOT / "fedora" / "docker-registry-ca.sh").read_text(

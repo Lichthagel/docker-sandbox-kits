@@ -3,6 +3,18 @@
 This project contains Alpine Linux and Fedora Docker Sandbox v3 workloads with
 Docker Engine support, and separate mise, LiteLLM, and OpenCode V2 mixins.
 
+## Run a workload without mise
+
+Both workloads start an interactive Bash shell without requiring mise:
+
+```sh
+sbx run ./alpine
+sbx run ./fedora
+```
+
+Add the `mise` mixin when you want mise installed and automatically activated
+for interactive Bash sessions.
+
 ## Run the Alpine workload with mise
 
 From the repository root, create a sandbox using the workload and mixin from

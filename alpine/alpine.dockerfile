@@ -11,8 +11,6 @@ RUN apk add --no-cache bash git git-daemon curl ca-certificates doas \
     && chown -R agent:agent /home/agent
 
 COPY --chown=agent:agent mise-config.toml /home/agent/.config/mise/config.toml
-COPY --chown=agent:agent bashrc /home/agent/.bashrc
-
 RUN touch /etc/sandbox-persistent.sh \
     && chown agent:agent /etc/sandbox-persistent.sh \
     && chmod 0644 /etc/sandbox-persistent.sh \

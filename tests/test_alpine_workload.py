@@ -76,46 +76,54 @@ class AlpineWorkloadTests(unittest.TestCase):
         self.assertIn("docker compose version", readme)
         self.assertIn("private Docker Engine", readme)
 
-    def test_interactive_bash_activates_mise(self):
+    def test_interactive_bash_runs_without_mise(self):
         bash = shutil.which("bash")
         if bash is None or os.name == "nt":
             self.skipTest("requires a native Bash executable")
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            (temp_path / ".bashrc").write_bytes(Path("alpine/bashrc").read_bytes())
-            fake_mise = temp_path / "mise"
-            fake_mise.write_text(
-                "#!/bin/sh\n"
-                '[ "$1" = activate ] && [ "$2" = bash ] || exit 2\n'
-                "printf 'export MISE_TEST_ACTIVATED=enabled\\n'\n",
-                encoding="utf-8",
-            )
-            fake_mise.chmod(0o755)
-            env = os.environ.copy()
-            env["PATH"] = str(temp_path) + os.pathsep + env.get("PATH", "")
-            env["HOME"] = str(temp_path)
-            env.pop("BASH_ENV", None)
+        for workload in ("alpine", "fedora"):
+            with self.subTest(workload=workload):
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    temp_path = Path(temp_dir)
+                    dockerfile = Path(
+                        workload, f"{workload}.dockerfile"
+                    ).read_text(encoding="utf-8")
+                    self.assertIn(
+                        "'. /etc/sandbox-persistent.sh' >> /home/agent/.bashrc",
+                        dockerfile,
+                    )
+                    persistent_script = temp_path / "sandbox-persistent.sh"
+                    persistent_script.write_text(":\n", encoding="utf-8")
+                    bashrc = f". {persistent_script}\n"
+                    (temp_path / ".bashrc").write_text(bashrc, encoding="utf-8")
+                    env = os.environ.copy()
+                    env["PATH"] = str(temp_path)
+                    env["HOME"] = str(temp_path)
+                    env.pop("BASH_ENV", None)
 
-            result = subprocess.run(
-                [
-                    bash,
-                    "--noprofile",
-                    "-ic",
-                    'printf "%s" "$MISE_TEST_ACTIVATED"',
-                ],
-                capture_output=True,
-                check=False,
-                env=env,
-                text=True,
-            )
+                    result = subprocess.run(
+                        [bash, "--noprofile", "-ic", "true"],
+                        capture_output=True,
+                        check=False,
+                        env=env,
+                        text=True,
+                    )
 
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "enabled")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertNotIn("mise: command not found", result.stderr)
 
     def test_dockerfile_installs_bashrc_for_agent(self):
-        dockerfile = Path("alpine/alpine.dockerfile").read_text(encoding="utf-8")
-        self.assertIn("COPY --chown=agent:agent bashrc /home/agent/.bashrc", dockerfile)
+        for workload in ("alpine", "fedora"):
+            dockerfile = Path(workload, f"{workload}.dockerfile").read_text(
+                encoding="utf-8"
+            )
+            with self.subTest(workload=workload):
+                self.assertFalse(Path(workload, "bashrc").exists())
+                self.assertNotIn("COPY --chown=agent:agent bashrc", dockerfile)
+                self.assertIn(
+                    "'. /etc/sandbox-persistent.sh' >> /home/agent/.bashrc",
+                    dockerfile,
+                )
 
     def test_mise_config_uses_prebuilt_node_musl_binaries(self):
         config_path = Path("alpine/mise-config.toml")
@@ -147,6 +155,12 @@ class AlpineWorkloadTests(unittest.TestCase):
         self.assertIn('eval "$(mise activate bash)"', readme)
         self.assertIn("community-maintained unofficial builds", readme)
         self.assertIn("unofficial-builds.nodejs.org", readme)
+
+    def test_readme_documents_workloads_without_mise(self):
+        readme = Path("README.md").read_text(encoding="utf-8")
+
+        self.assertIn("sbx run ./alpine\nsbx run ./fedora", readme)
+        self.assertIn("without requiring mise", readme)
 
     def test_readme_uses_local_workload_and_mixin(self):
         text = Path("README.md").read_text(encoding="utf-8")

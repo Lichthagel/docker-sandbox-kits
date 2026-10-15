@@ -27,3 +27,4 @@ ARG MISE_LIBC
 FROM build-${MISE_LIBC} AS selected
 FROM scratch
 COPY --from=selected /out/usr/local/bin/mise /usr/local/bin/mise
+COPY activate-bash.sh /usr/local/share/mise/activate-bash.sh
