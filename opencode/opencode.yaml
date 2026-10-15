@@ -11,7 +11,7 @@ capabilities:
       install:
         allow: [registry.npmjs.org, unofficial-builds.nodejs.org, nodejs.org]
       runtime:
-        allow: [registry.npmjs.org]
+        allow: [registry.npmjs.org, opencode.ai, models.opencode.ai]
   - type: com.docker.sandbox/lifecycle@1
     config:
       install:

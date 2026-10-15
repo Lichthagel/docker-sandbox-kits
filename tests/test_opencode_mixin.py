@@ -105,6 +105,14 @@ class OpenCodeMixinTests(unittest.TestCase):
             self.assertEqual(path.read_text(), original)
             self.assertIn("LiteLLM setup skipped", result.stderr)
 
+    def test_runtime_policy_allows_opencode_catalog_hosts(self):
+        descriptor = (ROOT / "opencode" / "opencode.yaml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("models.opencode.ai", descriptor)
+        self.assertIn("opencode.ai", descriptor)
+
 
 @unittest.skipUnless(
     os.environ.get("RUN_SBX_INTEGRATION") == "1",
@@ -150,9 +158,9 @@ class OpenCodeSandboxIntegrationTests(unittest.TestCase):
         sandbox = f"fedora-opencode-test-{uuid.uuid4().hex[:10]}"
         try:
             create = subprocess.run(
-                ["sbx", "run", str(ROOT / "fedora"), "--kit", str(ROOT / "mise"),
+                ["sbx", "create", str(ROOT / "fedora"), "--kit", str(ROOT / "mise"),
                  "--kit", str(ROOT / "litellm"), "--kit", str(ROOT / "opencode"),
-                 "--name", sandbox, "--detached"],
+                 "--name", sandbox],
                 capture_output=True, text=True, timeout=600,
             )
             self.assertEqual(create.returncode, 0, create.stdout + create.stderr)
@@ -160,6 +168,15 @@ class OpenCodeSandboxIntegrationTests(unittest.TestCase):
                 ["sbx", "exec", sandbox, "sh", "-lc",
                  "set -eu; mise --version; mise use -g node@lts; "
                  "mise exec -- node --version; mise exec -- opencode --version; "
+                 "attempt=0; until mise exec -- opencode models "
+                 "> /tmp/opencode-models.txt 2>/tmp/opencode-models.err "
+                 "&& grep -q '^litellm/' /tmp/opencode-models.txt; do "
+                 "attempt=$((attempt + 1)); "
+                 "if [ \"$attempt\" -ge 6 ]; then "
+                 "cat /tmp/opencode-models.err >&2; exit 1; fi; sleep 2; done; "
+                 "cat /tmp/opencode-models.txt; "
+                 "grep -q '^litellm/' /tmp/opencode-models.txt; "
+                 "grep -q '^opencode/' /tmp/opencode-models.txt; "
                  "test -f /home/agent/.config/opencode/opencode.json; "
                  "grep -q 'https://llm.licht.moe/v1' "
                  "/home/agent/.config/opencode/opencode.json; "
