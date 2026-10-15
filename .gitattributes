@@ -1,0 +1,4 @@
+# These files are copied into Linux images and must retain Unix line endings.
+*.sh text eol=lf
+bashrc text eol=lf
+fedora/docker text eol=lf

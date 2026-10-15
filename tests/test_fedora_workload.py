@@ -93,6 +93,29 @@ class FedoraWorkloadTests(unittest.TestCase):
     "set RUN_SBX_INTEGRATION=1 to create a Docker Sandbox",
 )
 class FedoraSandboxIntegrationTests(unittest.TestCase):
+    def test_interactive_bash_activates_mise_without_syntax_errors(self):
+        sandbox = f"fedora-bash-test-{uuid.uuid4().hex[:10]}"
+        try:
+            create = subprocess.run(
+                ["sbx", "create", str(ROOT / "fedora"), "--kit", str(ROOT / "mise"),
+                 "--name", sandbox],
+                cwd=ROOT, capture_output=True, text=True, timeout=300,
+            )
+            self.assertEqual(create.returncode, 0, create.stdout + create.stderr)
+            startup = subprocess.run(
+                ["sbx", "exec", sandbox, "bash", "-ic",
+                 "declare -F _mise_hook && mise --version"],
+                cwd=ROOT, capture_output=True, text=True, timeout=60,
+            )
+            self.assertEqual(startup.returncode, 0, startup.stdout + startup.stderr)
+            self.assertNotIn("syntax error", startup.stderr)
+            self.assertIn("_mise_hook", startup.stdout)
+        finally:
+            subprocess.run(
+                ["sbx", "rm", "--force", sandbox], cwd=ROOT,
+                capture_output=True, text=True, timeout=120,
+            )
+
     def test_private_docker_engine_buildx_and_compose(self):
         sandbox = f"fedora-docker-test-{uuid.uuid4().hex[:10]}"
 
