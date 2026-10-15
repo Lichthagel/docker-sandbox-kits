@@ -56,7 +56,10 @@ class FedoraWorkloadTests(unittest.TestCase):
 
     def test_bash_activates_mise(self):
         bashrc = (ROOT / "fedora" / "bashrc").read_text(encoding="utf-8")
-        self.assertEqual(bashrc.strip(), 'eval "$(mise activate bash)"')
+        self.assertEqual(
+            bashrc.splitlines(),
+            ["/usr/local/sbin/docker-registry-ca", 'eval "$(mise activate bash)"'],
+        )
 
     def test_docker_registry_ca_installer_is_safe_without_proxy_ca(self):
         installer = (ROOT / "fedora" / "docker-registry-ca.sh").read_text(
@@ -75,6 +78,16 @@ class FedoraWorkloadTests(unittest.TestCase):
         wrapper = (ROOT / "fedora" / "docker").read_text(encoding="utf-8")
         self.assertIn("/usr/local/sbin/docker-registry-ca", wrapper)
         self.assertIn('exec /usr/bin/docker "$@"', wrapper)
+
+    def test_proxy_ca_installer_updates_system_trust_before_bash_activation(self):
+        installer = (ROOT / "fedora" / "docker-registry-ca.sh").read_text(
+            encoding="utf-8"
+        )
+        bashrc = (ROOT / "fedora" / "bashrc").read_text(encoding="utf-8")
+
+        self.assertIn("/etc/pki/ca-trust/source/anchors/sandbox-proxy.crt", installer)
+        self.assertIn("sudo update-ca-trust", installer)
+        self.assertIn("/usr/local/sbin/docker-registry-ca", bashrc)
 
     def test_readme_documents_fedora_and_libc_selection(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
