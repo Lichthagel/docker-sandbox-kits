@@ -24,14 +24,26 @@ class AlpineWorkloadTests(unittest.TestCase):
     def test_mise_defaults_to_official_installer_latest(self):
         descriptor = Path("mise/mise.yaml").read_text(encoding="utf-8")
         dockerfile = Path("mise/mise.dockerfile").read_text(encoding="utf-8")
+        musl_descriptor = Path("mise-musl/mise-musl.yaml").read_text(
+            encoding="utf-8"
+        )
+        musl_dockerfile = Path("mise-musl/mise-musl.dockerfile").read_text(
+            encoding="utf-8"
+        )
         readme = Path("README.md").read_text(encoding="utf-8")
 
         self.assertIn('default: ""', descriptor)
         self.assertIn("buildArg: MISE_VERSION", descriptor)
         self.assertIn("pattern: '^([0-9]+\\.[0-9]+\\.[0-9]+)?$'", descriptor)
         self.assertIn('provides: ["mise@1"]', descriptor)
-        self.assertIn("FROM alpine:3.24.2 AS build-musl", dockerfile)
+        self.assertNotIn("libc:", descriptor)
+        self.assertIn("FROM fedora:46 AS build", dockerfile)
+        self.assertNotIn("FROM alpine:", dockerfile)
+        self.assertIn('provides: ["mise@1"]', musl_descriptor)
+        self.assertIn("FROM alpine:3.24.2 AS build", musl_dockerfile)
+        self.assertNotIn("FROM fedora:", musl_dockerfile)
         self.assertIn('MISE_VERSION="${MISE_VERSION:+v$MISE_VERSION}"', dockerfile)
+        self.assertIn('MISE_VERSION="${MISE_VERSION:+v$MISE_VERSION}"', musl_dockerfile)
         self.assertIn("latest eligible stable mise release", readme)
         self.assertIn("at kit build time", readme)
         self.assertIn("3.24.2", readme)
@@ -125,6 +137,14 @@ class AlpineWorkloadTests(unittest.TestCase):
                     dockerfile,
                 )
 
+    def test_alpine_bashrc_is_agent_owned_after_root_writes_it(self):
+        dockerfile = Path("alpine/alpine.dockerfile").read_text(encoding="utf-8")
+        append_bashrc = dockerfile.index(">> /home/agent/.bashrc")
+        self.assertIn("chown agent:agent /home/agent/.bashrc", dockerfile)
+        chown_bashrc = dockerfile.index("chown agent:agent /home/agent/.bashrc")
+
+        self.assertLess(append_bashrc, chown_bashrc)
+
     def test_mise_config_uses_prebuilt_node_musl_binaries(self):
         config_path = Path("alpine/mise-config.toml")
         self.assertTrue(
@@ -165,28 +185,28 @@ class AlpineWorkloadTests(unittest.TestCase):
     def test_readme_uses_local_workload_and_mixin(self):
         text = Path("README.md").read_text(encoding="utf-8")
         self.assertIn(
-            "sbx run ./alpine --kit ./mise --kit-arg libc=musl",
+            "sbx run ./alpine --kit ./mise-musl",
             text,
         )
-        self.assertIn("mise --version", text)
         self.assertIn("--platform linux/amd64", text)
         self.assertIn("--platform linux/arm64", text)
         self.assertIn("alpine-workload:amd64", text)
         self.assertIn("alpine-workload:arm64", text)
+        self.assertIn("mise --version", text)
 
     def test_readme_uses_default_branch_github_kit_references(self):
         text = Path("README.md").read_text(encoding="utf-8")
         source = r"git\+https://github\.com/Lichthagel/docker-sandbox-kits\.git#dir="
 
         self.assertRegex(text, source + "alpine")
-        self.assertRegex(text, source + "mise")
+        self.assertRegex(text, source + "mise-musl")
         self.assertNotIn("#ref=", text)
         self.assertIn(
             "sbx settings set kit.allowedSources ",
             text,
         )
         self.assertIn(
-            "sbx run 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=alpine' --kit 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=mise'",
+            "sbx run 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=alpine' --kit 'git+https://github.com/Lichthagel/docker-sandbox-kits.git#dir=mise-musl'",
             text,
         )
 

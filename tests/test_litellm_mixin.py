@@ -33,7 +33,7 @@ class LiteLLMMixinTests(unittest.TestCase):
         readme = Path("README.md").read_text(encoding="utf-8")
 
         self.assertIn(
-            "sbx run ./alpine --kit ./mise --kit-arg libc=musl --kit ./litellm",
+            "sbx run ./alpine --kit ./mise-musl --kit ./litellm",
             readme,
         )
         self.assertIn("llm.licht.moe/v1", readme)

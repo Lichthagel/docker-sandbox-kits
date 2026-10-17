@@ -16,7 +16,8 @@ RUN touch /etc/sandbox-persistent.sh \
     && chmod 0644 /etc/sandbox-persistent.sh \
     && printf '%s\n' '. /etc/sandbox-persistent.sh' \
         > /etc/profile.d/sandbox-persistent.sh \
-    && printf '%s\n' '. /etc/sandbox-persistent.sh' >> /home/agent/.bashrc
+    && printf '%s\n' '. /etc/sandbox-persistent.sh' >> /home/agent/.bashrc \
+    && chown agent:agent /home/agent/.bashrc
 
 LABEL com.docker.sandboxes.start-docker="true"
 

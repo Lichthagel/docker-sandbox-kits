@@ -10,6 +10,50 @@ import uuid
     "set RUN_SBX_INTEGRATION=1 to create a Docker Sandbox",
 )
 class AlpineSandboxIntegrationTests(unittest.TestCase):
+    def test_mise_musl_kit_composes_without_kit_arguments(self):
+        root = Path(__file__).resolve().parents[1]
+        sandbox = f"alpine-mise-musl-test-{uuid.uuid4().hex[:10]}"
+
+        try:
+            create = subprocess.run(
+                [
+                    "sbx",
+                    "create",
+                    "--no-progress",
+                    str(root / "alpine"),
+                    "--kit",
+                    str(root / "mise-musl"),
+                    "--name",
+                    sandbox,
+                ],
+                cwd=root,
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=300,
+            )
+            self.assertEqual(create.returncode, 0, create.stdout + create.stderr)
+
+            smoke = subprocess.run(
+                ["sbx", "exec", sandbox, "mise", "--version"],
+                cwd=root,
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=60,
+            )
+            self.assertEqual(smoke.returncode, 0, smoke.stdout + smoke.stderr)
+            self.assertIn("linux-", smoke.stdout)
+        finally:
+            subprocess.run(
+                ["sbx", "rm", "--force", sandbox],
+                cwd=root,
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=120,
+            )
+
     def test_clone_mode_fetches_from_alpine_sandbox(self):
         root = Path(__file__).resolve().parents[1]
         sandbox = f"alpine-clone-test-{uuid.uuid4().hex[:10]}"

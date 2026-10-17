@@ -1,7 +1,6 @@
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 import tempfile
 import unittest
@@ -120,18 +119,11 @@ class OpenCodeMixinTests(unittest.TestCase):
 )
 class OpenCodeSandboxIntegrationTests(unittest.TestCase):
     def test_install_and_conditional_litellm_setup(self):
-        version = subprocess.run(
-            ["sbx", "version"], capture_output=True, check=False, text=True
-        )
-        match = re.search(r"v(\d+)\.(\d+)\.(\d+)", version.stdout)
-        if match is None or tuple(map(int, match.groups())) < (0, 48, 0):
-            self.skipTest("local build-phase kit arguments require sbx 0.48.0 or newer")
-
         sandbox = f"opencode-test-{uuid.uuid4().hex[:10]}"
         try:
             create = subprocess.run(
-                ["sbx", "run", str(ROOT / "alpine"), "--kit", str(ROOT / "mise"),
-                 "--kit-arg", "libc=musl", "--kit", str(ROOT / "opencode"),
+                ["sbx", "run", str(ROOT / "alpine"), "--kit", str(ROOT / "mise-musl"),
+                 "--kit", str(ROOT / "opencode"),
                  "--name", sandbox, "--detached"],
                 capture_output=True, text=True, timeout=300,
             )

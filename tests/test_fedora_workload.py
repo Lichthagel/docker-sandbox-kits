@@ -25,7 +25,7 @@ class FedoraWorkloadTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("FROM fedora:44", dockerfile)
+        self.assertIn("FROM fedora:46", dockerfile)
         for package in (
             "bash",
             "ca-certificates",
@@ -88,12 +88,12 @@ class FedoraWorkloadTests(unittest.TestCase):
         self.assertIn("sudo update-ca-trust", installer)
         self.assertIn("/etc/docker/certs.d/docker.io/ca.crt", installer)
 
-    def test_readme_documents_fedora_and_libc_selection(self):
+    def test_readme_documents_fedora_glibc_kit(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
         self.assertIn("sbx run ./fedora --kit ./mise", readme)
-        self.assertIn("--kit-arg libc=musl", readme)
-        self.assertIn("defaults to `glibc`", readme)
+        self.assertIn("glibc-only", readme)
+        self.assertNotIn("--kit-arg libc=musl", readme)
         self.assertIn(
             "sbx run ./fedora --kit ./mise --kit ./litellm --kit ./opencode",
             readme,
