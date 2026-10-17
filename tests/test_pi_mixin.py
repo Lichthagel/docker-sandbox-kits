@@ -15,12 +15,16 @@ class PiMixinTests(unittest.TestCase):
             descriptor.index("command: [mise, use, -g, node@lts]"),
             descriptor.index("command: [mise, use, -g, pi]"),
         )
-        self.assertLess(
-            descriptor.index("command: [mise, use, -g, pi]"),
-            descriptor.index(
-                "command: [mise, exec, --, pi, install, npm:pi-provider-litellm]"
-            ),
+        install_commands = [
+            "command: [mise, exec, --, pi, install, npm:pi-provider-litellm]",
+            "command: [mise, exec, --, pi, install, npm:pi-subagents]",
+            "command: [mise, exec, --, pi, install, npm:pi-web-access]",
+        ]
+        positions = [descriptor.index(command) for command in install_commands]
+        self.assertGreater(
+            positions[0], descriptor.index("command: [mise, use, -g, pi]")
         )
+        self.assertEqual(positions, sorted(positions))
         self.assertIn("user: agent", descriptor)
 
     def test_network_policy_allows_pi_install_and_catalog_access(self):
@@ -52,6 +56,8 @@ class PiMixinTests(unittest.TestCase):
         )
         self.assertIn("mise exec -- pi --version", readme)
         self.assertIn("pi-provider-litellm", readme)
+        self.assertIn("pi-subagents", readme)
+        self.assertIn("pi-web-access", readme)
 
 
 if __name__ == "__main__":

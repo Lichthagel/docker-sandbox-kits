@@ -60,3 +60,29 @@ capabilities:
             - NODE_USE_ENV_PROXY
             - SSL_CERT_FILE
           description: Install Pi's LiteLLM provider extension
+        - command: [mise, exec, --, pi, install, npm:pi-subagents]
+          user: agent
+          env:
+            - HTTP_PROXY
+            - HTTPS_PROXY
+            - NO_PROXY
+            - http_proxy
+            - https_proxy
+            - no_proxy
+            - NODE_EXTRA_CA_CERTS
+            - NODE_USE_ENV_PROXY
+            - SSL_CERT_FILE
+          description: Install Pi's subagent extension
+        - command: [mise, exec, --, pi, install, npm:pi-web-access]
+          user: agent
+          env:
+            - HTTP_PROXY
+            - HTTPS_PROXY
+            - NO_PROXY
+            - http_proxy
+            - https_proxy
+            - no_proxy
+            - NODE_EXTRA_CA_CERTS
+            - NODE_USE_ENV_PROXY
+            - SSL_CERT_FILE
+          description: Install Pi's web access extension

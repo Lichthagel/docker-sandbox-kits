@@ -124,8 +124,9 @@ Node.js download hosts; runtime npm access allows OpenCode to load plugins.
 
 The `pi/` mixin requires the `mise` capability, provided by `mise/` on glibc
 workloads and `mise-musl/` on Alpine. It installs Pi with `mise use -g pi`,
-Node.js LTS for npm package installation, and the `pi-provider-litellm` package,
-which dynamically discovers models from the configured LiteLLM proxy.
+Node.js LTS for npm package installation, plus the `pi-provider-litellm`,
+`pi-subagents`, and `pi-web-access` extensions.
+The LiteLLM provider dynamically discovers models from the configured LiteLLM proxy.
 
 ```sh
 sbx run ./alpine --kit ./mise-musl --kit ./litellm --kit ./pi
@@ -134,7 +135,7 @@ sbx run ./fedora --kit ./mise --kit ./litellm --kit ./pi
 ```
 
 Inside the sandbox, run `pi`. In noninteractive shells, use
-`mise exec -- pi --version` or `mise exec -- pi`. The extension uses
+`mise exec -- pi --version` or `mise exec -- pi`. The LiteLLM extension uses
 `LITELLM_BASE_URL` from the LiteLLM mixin to discover configured models; runtime
 access is permitted to `llm.licht.moe`, while the npm registry is allowed only
 during installation. Store the host-side
@@ -144,12 +145,15 @@ during installation. Store the host-side
 only a placeholder; the sandbox proxy injects the host-side secret into
 matching requests, so the real key is not exposed to Pi.
 
-Pi is installed from GitHub releases with mise. The mixin installs the
-extension using `pi install npm:pi-provider-litellm`. It requires access to
-`registry.npmjs.org` during sandbox creation. The extension uses Pi's native
-provider and model picker; run `/model` to select discovered LiteLLM models.
-The LiteLLM mixin's host-side credential proxy provides authentication without
-placing the real API key in the sandbox.
+Pi is installed from GitHub releases with mise. The mixin installs
+`pi-provider-litellm`, `pi-subagents`, and `pi-web-access` through Pi's
+package manager. These packages require access to `registry.npmjs.org` during
+sandbox creation. The LiteLLM extension uses Pi's native provider and model
+picker; run `/model` to select discovered LiteLLM models. The subagent and
+web-access extensions add their respective agent and web-research tools.
+Runtime network access remains limited to the hosts allowed by the Pi mixin's
+policy. The LiteLLM mixin's host-side credential proxy provides
+authentication without placing the real API key in the sandbox.
 
 ## Build the Alpine workload
 
