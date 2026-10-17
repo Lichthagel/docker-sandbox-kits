@@ -1,0 +1,62 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: mixin
+displayName: Pi
+description: Installs the Pi coding agent with mise and integrates LiteLLM when configured.
+requires: [mise]
+
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      install:
+        allow:
+          - api.github.com
+          - github.com
+          - release-assets.githubusercontent.com
+          - registry.npmjs.org
+          - unofficial-builds.nodejs.org
+          - nodejs.org
+      runtime:
+        allow: [pi.dev, llm.licht.moe]
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        - command: [mise, use, -g, node@lts]
+          user: agent
+          env:
+            - HTTP_PROXY
+            - HTTPS_PROXY
+            - NO_PROXY
+            - http_proxy
+            - https_proxy
+            - no_proxy
+            - NODE_EXTRA_CA_CERTS
+            - NODE_USE_ENV_PROXY
+            - SSL_CERT_FILE
+          description: Install Node.js for Pi's npm package manager
+        - command: [mise, use, -g, pi]
+          user: agent
+          env:
+            - HTTP_PROXY
+            - HTTPS_PROXY
+            - NO_PROXY
+            - http_proxy
+            - https_proxy
+            - no_proxy
+            - NODE_EXTRA_CA_CERTS
+            - NODE_USE_ENV_PROXY
+            - SSL_CERT_FILE
+          description: Install the Pi coding agent with mise
+        - command: [mise, exec, --, pi, install, npm:pi-provider-litellm]
+          user: agent
+          env:
+            - HTTP_PROXY
+            - HTTPS_PROXY
+            - NO_PROXY
+            - http_proxy
+            - https_proxy
+            - no_proxy
+            - NODE_EXTRA_CA_CERTS
+            - NODE_USE_ENV_PROXY
+            - SSL_CERT_FILE
+          description: Install Pi's LiteLLM provider extension

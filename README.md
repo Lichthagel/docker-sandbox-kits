@@ -1,7 +1,7 @@
 # Docker Sandbox kits
 
 This project contains Alpine Linux and Fedora Docker Sandbox v3 workloads with
-Docker Engine support, and separate mise, LiteLLM, and OpenCode V2 mixins.
+Docker Engine support, and separate mise, LiteLLM, OpenCode V2, and Pi mixins.
 
 ## Run a workload without mise
 
@@ -121,6 +121,36 @@ JSONC files are left untouched; if `opencode.json` itself contains comments or
 trailing commas, setup skips it with a warning instead of failing startup.
 Installation permits the npm registry and
 Node.js download hosts; runtime npm access allows OpenCode to load plugins.
+
+## Use Pi
+
+The `pi/` mixin requires `mise/`. It installs Pi with `mise use -g pi`, Node.js
+LTS for npm package installation, and the `pi-provider-litellm` package, which
+dynamically discovers models from the configured LiteLLM proxy.
+
+```sh
+sbx run ./alpine --kit ./mise --kit-arg libc=musl --kit ./litellm --kit ./pi
+# Fedora uses the default glibc variant:
+sbx run ./fedora --kit ./mise --kit ./litellm --kit ./pi
+```
+
+Inside the sandbox, run `pi`. In noninteractive shells, use
+`mise exec -- pi --version` or `mise exec -- pi`. The extension uses
+`LITELLM_BASE_URL` from the LiteLLM mixin to discover configured models; runtime
+access is permitted to `llm.licht.moe`, while the npm registry is allowed only
+during installation. Store the host-side
+`licht-moe-litellm` secret as described in
+[Use the LiteLLM deployment](#use-the-litellm-deployment). The Pi mixin sets
+`LITELLM_API_KEY=proxy-managed` so the extension can discover models. This is
+only a placeholder; the sandbox proxy injects the host-side secret into
+matching requests, so the real key is not exposed to Pi.
+
+Pi is installed from GitHub releases with mise. The mixin installs the
+extension using `pi install npm:pi-provider-litellm`. It requires access to
+`registry.npmjs.org` during sandbox creation. The extension uses Pi's native
+provider and model picker; run `/model` to select discovered LiteLLM models.
+The LiteLLM mixin's host-side credential proxy provides authentication without
+placing the real API key in the sandbox.
 
 ## Build the Alpine workload
 
