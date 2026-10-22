@@ -1,4 +1,4 @@
-FROM alpine:3.24.2
+FROM alpine:3.24.3
 
 RUN apk add --no-cache bash git git-daemon curl ca-certificates doas \
     libstdc++ docker docker-cli-compose tini-static \
